@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --allow-read=/app --allow-run=curl --no-prompt main.tsx",
+    "dev": "deno run --allow-net --allow-env --allow-read=. --allow-run=curl --no-prompt --watch main.tsx",
+    "openapi-ts": "deno run -A npm:@hey-api/openapi-ts"
+  },
+  "imports": {
+    "@dldc/hono-ui": "jsr:@dldc/hono-ui@^1.1.2",
+    "@hey-api/openapi-ts": "npm:@hey-api/openapi-ts@^0.96.1",
+    "@hono/hono": "jsr:@hono/hono@^4.12.15",
+    "hono": "jsr:@hono/hono@^4.12.14"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx"
+  }
+}
