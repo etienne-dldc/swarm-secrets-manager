@@ -1,5 +1,6 @@
 import {
   Html,
+  Stack,
   TabLink,
   TabsGroup,
   Title,
@@ -54,20 +55,26 @@ export const Layout: FC<LayoutProps> = (
         <Title>
           Secrets Manager
         </Title>
-        <TabsGroup>
-          <TabLink
-            link="/secrets"
-            active={activeTab === "secrets"}
+        <Stack direction="row" justify="start">
+          <TabsGroup
+            class={css`
+              width: auto;
+            `}
           >
-            Secrets
-          </TabLink>
-          <TabLink
-            link="/configs"
-            active={activeTab === "configs"}
-          >
-            Configs
-          </TabLink>
-        </TabsGroup>
+            <TabLink
+              link="/secrets"
+              active={activeTab === "secrets"}
+            >
+              Secrets
+            </TabLink>
+            <TabLink
+              link="/configs"
+              active={activeTab === "configs"}
+            >
+              Configs
+            </TabLink>
+          </TabsGroup>
+        </Stack>
         {ok ? <div class={okClass}>{ok}</div> : null}
         {error ? <div class={errorClass}>{error}</div> : null}
         {children}

@@ -41,7 +41,7 @@ export const SecretsRow: FC<SecretsRowProps> = ({ secret }) => {
     <div class={itemClass}>
       <p class={nameClass}>{secret.name}</p>
       <p class={metaClass}>
-        <span>ID: {secret.shortId}</span>
+        <span>ID: {secret.id}</span>
         <span>Created: {secret.createdAt}</span>
       </p>
     </div>
