@@ -1,6 +1,5 @@
 import {
   Html,
-  Paper,
   TabLink,
   TabsGroup,
   Title,
@@ -69,11 +68,9 @@ export const Layout: FC<LayoutProps> = (
             Configs
           </TabLink>
         </TabsGroup>
-        <Paper>
-          {ok ? <div class={okClass}>{ok}</div> : null}
-          {error ? <div class={errorClass}>{error}</div> : null}
-          {children}
-        </Paper>
+        {ok ? <div class={okClass}>{ok}</div> : null}
+        {error ? <div class={errorClass}>{error}</div> : null}
+        {children}
       </UniversalLayout>
     </Html>
   );

@@ -1,19 +1,25 @@
-import { Paper } from "@dldc/hono-ui";
+import { Paper, utility } from "@dldc/hono-ui";
+import { css } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
+import type { SecretView } from "../logic/api/index.ts";
+import { SecretsList } from "./secrets/SecretsList.tsx";
 
 type SecretsPageProps = {
-  count: number;
+  secrets: SecretView[];
   ok?: string | null;
   error?: string | null;
 };
 
-export const SecretsPage: FC<SecretsPageProps> = ({ count, ok, error }) => {
+export const SecretsPage: FC<SecretsPageProps> = ({ secrets, ok, error }) => {
   return (
     <Layout title="Secrets" activeTab="secrets" ok={ok} error={error}>
-      <Paper>
-        <h2>Secrets</h2>
-        <p>Minimal secrets view. Total secrets: {count}</p>
+      <Paper
+        class={css`
+          ${utility.flex({ gap: 2, padding: 3, direction: "column" })};
+        `}
+      >
+        <SecretsList secrets={secrets} />
       </Paper>
     </Layout>
   );

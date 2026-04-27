@@ -40,7 +40,7 @@ app.get("/secrets", async (c) => {
     const { ok, error } = getFlash(c);
 
     return await c.html(
-      <SecretsPage count={secrets.length} ok={ok} error={error} />,
+      <SecretsPage secrets={secrets} ok={ok} error={error} />,
       200,
       { "cache-control": "no-store" },
     );

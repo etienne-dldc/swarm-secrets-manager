@@ -7,9 +7,56 @@ type MockResource = {
   createdAt: string;
 };
 
-const mockSecrets = new Map<string, MockResource>();
+const mockSecrets = new Map<string, MockResource>([
+  [
+    "secret-db-password-001",
+    {
+      id: "secret-db-password-001",
+      name: "db_password",
+      value: "dev-db-password",
+      createdAt: "2026-04-25T08:15:00.000Z",
+    },
+  ],
+  [
+    "secret-api-token-002",
+    {
+      id: "secret-api-token-002",
+      name: "api_token",
+      value: "dev-api-token",
+      createdAt: "2026-04-26T10:30:00.000Z",
+    },
+  ],
+  [
+    "secret-smtp-password-003",
+    {
+      id: "secret-smtp-password-003",
+      name: "smtp_password",
+      value: "dev-smtp-password",
+      createdAt: "2026-04-27T14:45:00.000Z",
+    },
+  ],
+]);
 
-const mockConfigs = new Map<string, MockResource>();
+const mockConfigs = new Map<string, MockResource>([
+  [
+    "config-app-env-001",
+    {
+      id: "config-app-env-001",
+      name: "app_env",
+      value: "development",
+      createdAt: "2026-04-25T09:00:00.000Z",
+    },
+  ],
+  [
+    "config-log-level-002",
+    {
+      id: "config-log-level-002",
+      name: "log_level",
+      value: "debug",
+      createdAt: "2026-04-26T11:20:00.000Z",
+    },
+  ],
+]);
 
 export function createMockApi(): DockerApi {
   return {
