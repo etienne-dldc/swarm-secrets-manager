@@ -4,6 +4,8 @@ import {
   createMockApi,
   type SecretsApi,
 } from "./logic/api/index.ts";
+import { redirectTo } from "./logic/redirectTo.ts";
+import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
 import { NotFoundPage } from "./views/NotFoundPage.tsx";
 import { SecretsPage } from "./views/SecretsPage.tsx";
@@ -13,33 +15,6 @@ const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
   ? createMockApi()
   : createActualApi();
 
-function redirectTo(path: string): Response {
-  return new Response(null, {
-    status: 303,
-    headers: {
-      location: path,
-      "cache-control": "no-store",
-    },
-  });
-}
-
-function redirectWithMessage(
-  path: string,
-  type: "ok" | "error",
-  message: string,
-): Response {
-  const searchParams = new URLSearchParams();
-  searchParams.set(type, message);
-
-  return new Response(null, {
-    status: 303,
-    headers: {
-      location: `${path}?${searchParams.toString()}`,
-      "cache-control": "no-store",
-    },
-  });
-}
-
 function getFlash(c: Context) {
   return {
     ok: c.req.query("ok") ?? null,
@@ -47,7 +22,19 @@ function getFlash(c: Context) {
   };
 }
 
-async function renderSecretsPage(c: Context): Promise<Response> {
+const app = new Hono();
+
+app.notFound((c) => {
+  return c.html(<NotFoundPage />, 404, {
+    "cache-control": "no-store",
+  });
+});
+
+app.get("/", () => {
+  return redirectTo("/secrets");
+});
+
+app.get("/secrets", async (c) => {
   try {
     const secrets = await api.listSecrets();
     const { ok, error } = getFlash(c);
@@ -66,9 +53,9 @@ async function renderSecretsPage(c: Context): Promise<Response> {
       `Unable to list secrets: ${message}`,
     );
   }
-}
+});
 
-async function renderConfigsPage(c: Context): Promise<Response> {
+app.get("/configs", async (c) => {
   try {
     const configs = await api.listConfigs();
     const { ok, error } = getFlash(c);
@@ -86,26 +73,6 @@ async function renderConfigsPage(c: Context): Promise<Response> {
       `Unable to list configs: ${message}`,
     );
   }
-}
-
-const app = new Hono();
-
-app.notFound((c) => {
-  return c.html(<NotFoundPage />, 404, {
-    "cache-control": "no-store",
-  });
-});
-
-app.get("/", () => {
-  return redirectTo("/secrets");
-});
-
-app.get("/secrets", async (c) => {
-  return await renderSecretsPage(c);
-});
-
-app.get("/configs", async (c) => {
-  return await renderConfigsPage(c);
 });
 
 app.post("/secrets/create", async (c) => {
