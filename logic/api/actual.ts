@@ -1,36 +1,38 @@
-import type { SecretView } from "../views/HomePage.tsx";
+import type {
+  ConfigSpec,
+  DockerApi,
+  DockerConfig,
+  DockerSecret,
+  ResourceView,
+  SecretSpec,
+} from "./types.ts";
 
 const DOCKER_API_VERSION = Deno.env.get("DOCKER_API_VERSION") ?? "v1.43";
 const DOCKER_SOCKET = Deno.env.get("DOCKER_SOCKET") ?? "/var/run/docker.sock";
 
-interface SecretItem {
-  ID: string;
-  CreatedAt?: string;
-  Spec?: {
-    Name?: string;
-  };
-}
-
-interface DockerApiResponse {
+type DockerApiResponse = {
   status: number;
   body: string;
-}
-
-export interface SecretsApi {
-  list: () => Promise<SecretView[]>;
-  create: (name: string, value: string) => Promise<void>;
-  delete: (id: string) => Promise<void>;
-  validateName: (name: string) => string | null;
-  formatDeleteLabel: (id: string, name?: string) => string;
-}
-
-export const secrets: SecretsApi = {
-  list: listSecretViews,
-  create: createSecret,
-  delete: deleteSecret,
-  validateName: validateSecretName,
-  formatDeleteLabel: formatSecretDeleteLabel,
 };
+
+type ResourceKind = "secret" | "config";
+
+type NamedDockerResource = DockerSecret | DockerConfig;
+
+export function createActualApi(): DockerApi {
+  return {
+    listSecrets: () => listResources<DockerSecret>("secret"),
+    createSecret: (name, value) => createResource("secret", name, value),
+    deleteSecret: (id) => deleteResource("secret", id),
+    validateSecretName: validateResourceName,
+    formatSecretDeleteLabel: formatDeleteLabel,
+    listConfigs: () => listResources<DockerConfig>("config"),
+    createConfig: (name, value) => createResource("config", name, value),
+    deleteConfig: (id) => deleteResource("config", id),
+    validateConfigName: validateResourceName,
+    formatConfigDeleteLabel: formatDeleteLabel,
+  };
+}
 
 function encodeBase64Utf8(input: string): string {
   const bytes = new TextEncoder().encode(input);
@@ -124,68 +126,94 @@ async function dockerApi(
   return { status, body };
 }
 
-function toSecretView(secret: SecretItem): SecretView {
-  const id = secret.ID;
-  const name = secret.Spec?.Name ?? "(unnamed)";
+function getCollectionPath(kind: ResourceKind): string {
+  return kind === "secret" ? "/secrets" : "/configs";
+}
+
+function getCreatePath(kind: ResourceKind): string {
+  return kind === "secret" ? "/secrets/create" : "/configs/create";
+}
+
+function toResourceView<TResource extends NamedDockerResource>(
+  resource: TResource,
+): ResourceView<TResource> {
+  const id = resource.ID ?? "";
+  const name = resource.Spec?.Name ?? "(unnamed)";
 
   return {
+    docker: resource,
     id,
     name,
     shortId: shortId(id),
-    createdAt: formatDate(secret.CreatedAt),
+    createdAt: formatDate(resource.CreatedAt),
   };
 }
 
-function validateSecretName(name: string): string | null {
+function validateResourceName(name: string): string | null {
   if (name.length === 0 || name.length > 128) {
-    return "Secret name must be between 1 and 128 characters.";
+    return "Name must be between 1 and 128 characters.";
   }
 
   if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)) {
-    return "Secret name must start with an alphanumeric character and contain only letters, numbers, dot, underscore or dash.";
+    return "Name must start with an alphanumeric character and contain only letters, numbers, dot, underscore or dash.";
   }
 
   return null;
 }
 
-async function listSecretViews(): Promise<SecretView[]> {
-  const response = await dockerApi("GET", "/secrets");
+async function listResources<TResource extends NamedDockerResource>(
+  kind: ResourceKind,
+): Promise<ResourceView<TResource>[]> {
+  const response = await dockerApi("GET", getCollectionPath(kind));
   if (response.status !== 200) {
     throw new Error(extractDockerMessage(response.body));
   }
 
-  const parsed = JSON.parse(response.body) as SecretItem[];
-  parsed.sort((a, b) => {
-    const nameA = a.Spec?.Name ?? "";
-    const nameB = b.Spec?.Name ?? "";
-    return nameA.localeCompare(nameB);
+  const parsed = JSON.parse(response.body) as TResource[];
+  parsed.sort((left, right) => {
+    const leftName = left.Spec?.Name ?? "";
+    const rightName = right.Spec?.Name ?? "";
+    return leftName.localeCompare(rightName);
   });
 
-  return parsed.map(toSecretView);
+  return parsed.map((resource) => toResourceView(resource));
 }
 
-async function createSecret(name: string, value: string): Promise<void> {
-  const payload = JSON.stringify({
+async function createResource(
+  kind: ResourceKind,
+  name: string,
+  value: string,
+): Promise<void> {
+  const validation = validateResourceName(name);
+  if (validation) {
+    throw new Error(validation);
+  }
+
+  const payloadBody = {
     Name: name,
     Data: encodeBase64Utf8(value),
-  });
+  } satisfies SecretSpec & ConfigSpec;
 
-  const response = await dockerApi("POST", "/secrets/create", payload);
+  const response = await dockerApi(
+    "POST",
+    getCreatePath(kind),
+    JSON.stringify(payloadBody),
+  );
   if (response.status !== 201) {
     throw new Error(extractDockerMessage(response.body));
   }
 }
 
-async function deleteSecret(id: string): Promise<void> {
+async function deleteResource(kind: ResourceKind, id: string): Promise<void> {
   const response = await dockerApi(
     "DELETE",
-    `/secrets/${encodeURIComponent(id)}`,
+    `${getCollectionPath(kind)}/${encodeURIComponent(id)}`,
   );
   if (response.status !== 204) {
     throw new Error(extractDockerMessage(response.body));
   }
 }
 
-function formatSecretDeleteLabel(id: string, name?: string): string {
+function formatDeleteLabel(id: string, name?: string): string {
   return name?.trim() || shortId(id);
 }

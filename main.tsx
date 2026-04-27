@@ -1,75 +1,132 @@
-import { Hono } from "hono";
-import { Layout } from "./components/Layout.tsx";
-import type { SecretsApi } from "./logic/secrets.ts";
+import { type Context, Hono } from "hono";
+import {
+  createActualApi,
+  createMockApi,
+  type SecretsApi,
+} from "./logic/api/index.ts";
+import { ConfigsPage } from "./views/ConfigsPage.tsx";
+import { NotFoundPage } from "./views/NotFoundPage.tsx";
+import { SecretsPage } from "./views/SecretsPage.tsx";
 
 const PORT = Number(Deno.env.get("PORT") ?? "8080");
-const secretsModule = Deno.env.get("MOCK_SECRETS_API")
-  ? await import("./logic/mock-secrets.ts")
-  : await import("./logic/secrets.ts");
-const secrets = secretsModule.secrets as SecretsApi;
+const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
+  ? createMockApi()
+  : createActualApi();
 
-function redirectWithMessage(type: "ok" | "error", message: string): Response {
+function redirectTo(path: string): Response {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: path,
+      "cache-control": "no-store",
+    },
+  });
+}
+
+function redirectWithMessage(
+  path: string,
+  type: "ok" | "error",
+  message: string,
+): Response {
   const searchParams = new URLSearchParams();
   searchParams.set(type, message);
 
   return new Response(null, {
     status: 303,
     headers: {
-      location: `/?${searchParams.toString()}`,
+      location: `${path}?${searchParams.toString()}`,
       "cache-control": "no-store",
     },
   });
 }
 
+function getFlash(c: Context) {
+  return {
+    ok: c.req.query("ok") ?? null,
+    error: c.req.query("error") ?? null,
+  };
+}
+
+async function renderSecretsPage(c: Context): Promise<Response> {
+  try {
+    const secrets = await api.listSecrets();
+    const { ok, error } = getFlash(c);
+
+    return await c.html(
+      <SecretsPage count={secrets.length} ok={ok} error={error} />,
+      200,
+      { "cache-control": "no-store" },
+    );
+  } catch (error) {
+    console.error(error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return redirectWithMessage(
+      "/secrets",
+      "error",
+      `Unable to list secrets: ${message}`,
+    );
+  }
+}
+
+async function renderConfigsPage(c: Context): Promise<Response> {
+  try {
+    const configs = await api.listConfigs();
+    const { ok, error } = getFlash(c);
+
+    return await c.html(
+      <ConfigsPage count={configs.length} ok={ok} error={error} />,
+      200,
+      { "cache-control": "no-store" },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return redirectWithMessage(
+      "/configs",
+      "error",
+      `Unable to list configs: ${message}`,
+    );
+  }
+}
+
 const app = new Hono();
 
-app.get("/", (c) => {
-  return c.html(
-    <Layout title="Swarm Secrets UI">
-      Hey
-    </Layout>,
-    200,
-    {
-      "cache-control": "no-store",
-    },
-  );
-
-  // try {
-  //   const secrets = (await listSecrets()).map(toSecretView);
-  //   const ok = c.req.query("ok") ?? null;
-  //   const error = c.req.query("error") ?? null;
-  //   const user = c.req.header("x-forwarded-user") ?? null;
-
-  //   return c.html(
-  //     <Layout title="Swarm Secrets UI" user={user}>
-  //       <HomePage secrets={secrets} ok={ok} error={error} />
-  //     </Layout>,
-  //     200,
-  //     {
-  //       "cache-control": "no-store",
-  //     },
-  //   );
-  // } catch (error) {
-  //   const message = error instanceof Error ? error.message : "Unknown error";
-  //   return redirectWithMessage("error", `Unable to list secrets: ${escapeHtml(message)}`);
-  // }
+app.notFound((c) => {
+  return c.html(<NotFoundPage />, 404, {
+    "cache-control": "no-store",
+  });
 });
 
-app.post("/create", async (c) => {
+app.get("/", () => {
+  return redirectTo("/secrets");
+});
+
+app.get("/secrets", async (c) => {
+  return await renderSecretsPage(c);
+});
+
+app.get("/configs", async (c) => {
+  return await renderConfigsPage(c);
+});
+
+app.post("/secrets/create", async (c) => {
   try {
     const form = await c.req.formData();
     const name = String(form.get("name") ?? "").trim();
     const value = String(form.get("value") ?? "");
 
-    const invalidName = secrets.validateName(name);
+    const invalidName = api.validateSecretName(name);
     if (invalidName) {
-      return redirectWithMessage("error", invalidName);
+      return redirectWithMessage("/secrets", "error", invalidName);
     }
     if (value.length === 0) {
-      return redirectWithMessage("error", "Secret value cannot be empty.");
+      return redirectWithMessage(
+        "/secrets",
+        "error",
+        "Secret value cannot be empty.",
+      );
     }
 
-    await secrets.create(name, value);
+    await api.createSecret(name, value);
 
     console.log(JSON.stringify({
       action: "create_secret",
@@ -78,24 +135,32 @@ app.post("/create", async (c) => {
       ts: new Date().toISOString(),
     }));
 
-    return redirectWithMessage("ok", `Secret ${name} created.`);
+    return redirectWithMessage("/secrets", "ok", `Secret ${name} created.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage("error", `Create failed: ${message}`);
+    return redirectWithMessage(
+      "/secrets",
+      "error",
+      `Create failed: ${message}`,
+    );
   }
 });
 
-app.post("/delete", async (c) => {
+app.post("/secrets/delete", async (c) => {
   try {
     const form = await c.req.formData();
     const id = String(form.get("id") ?? "").trim();
     const name = String(form.get("name") ?? "").trim();
 
     if (id.length === 0) {
-      return redirectWithMessage("error", "Missing secret id for delete.");
+      return redirectWithMessage(
+        "/secrets",
+        "error",
+        "Missing secret id for delete.",
+      );
     }
 
-    await secrets.delete(id);
+    await api.deleteSecret(id);
 
     console.log(JSON.stringify({
       action: "delete_secret",
@@ -106,12 +171,94 @@ app.post("/delete", async (c) => {
     }));
 
     return redirectWithMessage(
+      "/secrets",
       "ok",
-      `Secret ${secrets.formatDeleteLabel(id, name)} deleted.`,
+      `Secret ${api.formatSecretDeleteLabel(id, name)} deleted.`,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage("error", `Delete failed: ${message}`);
+    return redirectWithMessage(
+      "/secrets",
+      "error",
+      `Delete failed: ${message}`,
+    );
+  }
+});
+
+app.post("/configs/create", async (c) => {
+  try {
+    const form = await c.req.formData();
+    const name = String(form.get("name") ?? "").trim();
+    const value = String(form.get("value") ?? "");
+
+    const invalidName = api.validateConfigName(name);
+    if (invalidName) {
+      return redirectWithMessage("/configs", "error", invalidName);
+    }
+    if (value.length === 0) {
+      return redirectWithMessage(
+        "/configs",
+        "error",
+        "Config value cannot be empty.",
+      );
+    }
+
+    await api.createConfig(name, value);
+
+    console.log(JSON.stringify({
+      action: "create_config",
+      name,
+      user: c.req.header("x-forwarded-user") ?? null,
+      ts: new Date().toISOString(),
+    }));
+
+    return redirectWithMessage("/configs", "ok", `Config ${name} created.`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return redirectWithMessage(
+      "/configs",
+      "error",
+      `Create failed: ${message}`,
+    );
+  }
+});
+
+app.post("/configs/delete", async (c) => {
+  try {
+    const form = await c.req.formData();
+    const id = String(form.get("id") ?? "").trim();
+    const name = String(form.get("name") ?? "").trim();
+
+    if (id.length === 0) {
+      return redirectWithMessage(
+        "/configs",
+        "error",
+        "Missing config id for delete.",
+      );
+    }
+
+    await api.deleteConfig(id);
+
+    console.log(JSON.stringify({
+      action: "delete_config",
+      id,
+      name: name || null,
+      user: c.req.header("x-forwarded-user") ?? null,
+      ts: new Date().toISOString(),
+    }));
+
+    return redirectWithMessage(
+      "/configs",
+      "ok",
+      `Config ${api.formatConfigDeleteLabel(id, name)} deleted.`,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return redirectWithMessage(
+      "/configs",
+      "error",
+      `Delete failed: ${message}`,
+    );
   }
 });
 

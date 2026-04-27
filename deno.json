@@ -1,13 +1,14 @@
 {
   "tasks": {
     "start": "deno run --allow-net --allow-env --allow-read=/app --allow-run=curl --no-prompt main.tsx",
-    "dev": "deno run --allow-net --allow-env --allow-read=. --allow-run=curl --no-prompt --watch main.tsx",
+    "dev": "MOCK_SECRETS_API=1 deno run --allow-net --allow-env --allow-read=. --allow-run=curl --no-prompt --watch main.tsx",
     "openapi-ts": "deno run -A npm:@hey-api/openapi-ts"
   },
   "imports": {
-    "@dldc/hono-ui": "jsr:@dldc/hono-ui@^1.1.2",
+    "@dldc/hono-ui": "jsr:@dldc/hono-ui@^1.2.0",
     "@hey-api/openapi-ts": "npm:@hey-api/openapi-ts@^0.96.1",
     "@hono/hono": "jsr:@hono/hono@^4.12.15",
+    "@valibot/valibot": "jsr:@valibot/valibot@^1.3.1",
     "hono": "jsr:@hono/hono@^4.12.14"
   },
   "compilerOptions": {
