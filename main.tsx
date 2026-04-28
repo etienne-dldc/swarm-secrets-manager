@@ -4,6 +4,7 @@ import {
   createMockApi,
   type SecretsApi,
 } from "./logic/api/index.ts";
+import { CONFIG_JSON_PATH, loadConfigFromPath } from "./logic/loadConfig.ts";
 import { redirectTo } from "./logic/redirectTo.ts";
 import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
@@ -13,6 +14,14 @@ import { SecretsPage } from "./views/SecretsPage.tsx";
 import { SecretDetailPage } from "./views/secrets/SecretDetailPage.tsx";
 
 const PORT = Number(Deno.env.get("PORT") ?? "3000");
+const config = await loadConfigFromPath(CONFIG_JSON_PATH);
+
+if (config) {
+  console.log(
+    `Loaded ${config.secrets.length} expected secrets from ${CONFIG_JSON_PATH}`,
+  );
+}
+
 const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
   ? createMockApi()
   : createActualApi();
