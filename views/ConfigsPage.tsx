@@ -15,7 +15,12 @@ export const ConfigsPage: FC<ConfigsPageProps> = ({ count, ok, error }) => {
   `;
 
   const headerRowClass = css`
-    ${utility.flex({ direction: "row", justify: "between", align: "center", gap: 2 })};
+    ${utility.flex({
+      direction: "row",
+      justify: "between",
+      align: "center",
+      gap: 2,
+    })};
   `;
 
   const titleClass = css`

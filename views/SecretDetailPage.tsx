@@ -30,25 +30,57 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     margin: 0;
   `;
 
-  const detailsGridClass = css`
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 1rem;
-    row-gap: 0.85rem;
-    align-items: center;
+  const headerMetaClass = css`
+    ${utility.flex({ direction: "row", gap: 2, align: "center" })};
+    flex-wrap: wrap;
   `;
 
   const actionsClass = css`
     ${utility.flex({ justify: "end" })};
   `;
 
-  const labelClass = css`
+  const descriptionClass = css`
+    ${utility.textSize("lg")};
+    ${utility.textColor("gray.100")};
+    margin: 0;
+  `;
+
+  const typeBadgeClass = css`
     ${utility.textSize("sm")};
+    ${utility.fontWeight("bold")};
+    ${utility.textColor("gray.100")};
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(51, 65, 85, 0.25);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-family:
+      ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
+      Liberation Mono, Courier New, monospace;
+  `;
+
+  const createdTextClass = css`
+    ${utility.textSize("sm")};
+    ${utility.textColor("gray.200")};
+    margin: 0;
+  `;
+
+  const detailsRowsClass = css`
+    ${utility.flex({ direction: "column", gap: 2 })};
+  `;
+
+  const detailRowClass = css`
+    ${utility.flex({ direction: "column", gap: 0 })};
+    border-left: 2px solid rgba(148, 163, 184, 0.25);
+    padding-left: 0.75rem;
+  `;
+
+  const detailLabelClass = css`
+    ${utility.textSize("xs")};
     ${utility.textColor("gray.300")};
     ${utility.fontWeight("bold")};
-    margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    margin: 0;
   `;
 
   const valueClass = css`
@@ -91,34 +123,24 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
           </div>
         </Stack>
 
-        <dl class={detailsGridClass}>
-          {description
-            ? (
-              <>
-                <dt class={labelClass}>Description</dt>
-                <dd class={valueClass}>{description}</dd>
-              </>
-            )
-            : null}
+        <div class={headerMetaClass}>
+          {type ? <span class={typeBadgeClass}>{type}</span> : null}
+          <p class={createdTextClass}>Created {secret.createdAt}</p>
+        </div>
 
-          {type
-            ? (
-              <>
-                <dt class={labelClass}>Type</dt>
-                <dd class={cx(valueClass, codeClass)}>{type}</dd>
-              </>
-            )
-            : null}
+        {description ? <p class={descriptionClass}>{description}</p> : null}
 
-          <dt class={labelClass}>Created</dt>
-          <dd class={valueClass}>{secret.createdAt}</dd>
+        <div class={detailsRowsClass}>
+          <div class={detailRowClass}>
+            <p class={detailLabelClass}>Short ID</p>
+            <p class={cx(valueClass, codeClass)}>{secret.shortId}</p>
+          </div>
 
-          <dt class={labelClass}>Short ID</dt>
-          <dd class={cx(valueClass, codeClass)}>{secret.shortId}</dd>
-
-          <dt class={labelClass}>Full ID</dt>
-          <dd class={cx(valueClass, codeClass)}>{secret.id}</dd>
-        </dl>
+          <div class={detailRowClass}>
+            <p class={detailLabelClass}>Full ID</p>
+            <p class={cx(valueClass, codeClass)}>{secret.id}</p>
+          </div>
+        </div>
       </Paper>
     </Layout>
   );
