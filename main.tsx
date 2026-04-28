@@ -4,11 +4,13 @@ import {
   createMockApi,
   type SecretsApi,
 } from "./logic/api/index.ts";
+import type { TSecretType } from "./logic/configSchema.ts";
 import { CONFIG_JSON_PATH, loadConfigFromPath } from "./logic/loadConfig.ts";
 import { redirectTo } from "./logic/redirectTo.ts";
 import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
 import { buildSecretListItems } from "./logic/secretListItems.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
+import { CreateSecretPage } from "./views/CreateSecretPage.tsx";
 import { ErrorPage } from "./views/ErrorPage.tsx";
 import { NotFoundPage } from "./views/NotFoundPage.tsx";
 import { SecretDetailPage } from "./views/SecretDetailPage.tsx";
@@ -26,6 +28,10 @@ if (config) {
 const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
   ? createMockApi()
   : createActualApi();
+
+function isSecretType(value: string | null | undefined): value is TSecretType {
+  return value === "string" || value === "json";
+}
 
 function getFlash(c: Context) {
   return {
@@ -101,6 +107,43 @@ app.get("/secrets", async (c) => {
   }
 });
 
+app.get("/secrets/create", async (c) => {
+  const requestedType = c.req.query("type");
+  const requestedName = c.req.query("name")?.trim();
+
+  const allSecrets = await api.listSecrets();
+  const existingSecret = requestedName
+    ? allSecrets.find((item) => item.name === requestedName) ?? null
+    : null;
+  const expectedSecret = requestedName
+    ? config?.secrets.find((item) => item.name === requestedName) ?? null
+    : null;
+
+  const resolvedType: TSecretType = isSecretType(requestedType)
+    ? requestedType
+    : expectedSecret?.type ?? "string";
+  const resolvedName = requestedName ?? "";
+  const defaultValue = expectedSecret?.type === "json"
+    ? expectedSecret.options?.defaultTemplate ?? ""
+    : "";
+
+  const { ok, error } = getFlash(c);
+
+  return await c.html(
+    <CreateSecretPage
+      name={resolvedName}
+      type={resolvedType}
+      description={expectedSecret?.description ?? null}
+      defaultValue={defaultValue}
+      existingSecret={existingSecret}
+      ok={ok}
+      error={error}
+    />,
+    200,
+    { "cache-control": "no-store" },
+  );
+});
+
 app.get("/secret/:id", async (c) => {
   const id = c.req.param("id");
   const secret = await api.getSecret(id);
@@ -146,6 +189,11 @@ app.post("/secrets/create", async (c) => {
     const form = await c.req.formData();
     const name = String(form.get("name") ?? "").trim();
     const value = String(form.get("value") ?? "");
+    const overwriteExisting =
+      String(form.get("overwriteExisting") ?? "") === "1";
+    const rotateOriginalName = String(form.get("rotateOriginalName") ?? "")
+      .trim();
+    let rotated = false;
 
     const invalidName = api.validateSecretName(name);
     if (invalidName) {
@@ -153,6 +201,23 @@ app.post("/secrets/create", async (c) => {
     }
     if (value.length === 0) {
       throw new Error("Secret value cannot be empty.");
+    }
+
+    if (overwriteExisting) {
+      if (rotateOriginalName.length === 0) {
+        throw new Error("Missing original secret name for rotate operation.");
+      }
+      if (name !== rotateOriginalName) {
+        throw new Error("Secret name cannot be changed during rotation.");
+      }
+
+      const existingSecret = (await api.listSecrets()).find((item) =>
+        item.name === rotateOriginalName
+      );
+      if (existingSecret) {
+        await api.deleteSecret(existingSecret.id);
+        rotated = true;
+      }
     }
 
     await api.createSecret(name, value);
@@ -164,7 +229,11 @@ app.post("/secrets/create", async (c) => {
       ts: new Date().toISOString(),
     }));
 
-    return redirectWithMessage("/secrets", "ok", `Secret ${name} created.`);
+    return redirectWithMessage(
+      "/secrets",
+      "ok",
+      rotated ? `Secret ${name} rotated.` : `Secret ${name} created.`,
+    );
   } catch (error) {
     throw new Error(
       `Create failed: ${

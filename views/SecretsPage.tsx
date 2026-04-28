@@ -1,4 +1,4 @@
-import { Paper, utility } from "@dldc/hono-ui";
+import { Button, InlineGroup, Paper, Select, utility } from "@dldc/hono-ui";
 import { css } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
@@ -12,6 +12,19 @@ type SecretsPageProps = {
 };
 
 export const SecretsPage: FC<SecretsPageProps> = ({ secrets, ok, error }) => {
+  const headerRowClass = css`
+    ${utility.flex({
+      direction: "row",
+      justify: "between",
+      align: "center",
+      gap: 2,
+    })};
+  `;
+
+  const createFormClass = css`
+    ${utility.flex({ direction: "row", align: "center", gap: 2 })};
+  `;
+
   return (
     <Layout title="Secrets" activeTab="secrets" ok={ok} error={error}>
       <Paper
@@ -19,15 +32,29 @@ export const SecretsPage: FC<SecretsPageProps> = ({ secrets, ok, error }) => {
           ${utility.flex({ gap: 2, padding: 3, direction: "column" })};
         `}
       >
-        <h2
-          class={css`
-            ${utility.textSize("lg")};
-            ${utility.fontWeight("semibold")};
-            text-transform: uppercase;
-          `}
-        >
-          Secrets
-        </h2>
+        <div class={headerRowClass}>
+          <h2
+            class={css`
+              ${utility.textSize("lg")};
+              ${utility.fontWeight("semibold")};
+              text-transform: uppercase;
+              margin: 0;
+            `}
+          >
+            Secrets
+          </h2>
+          <form method="get" action="/secrets/create" class={createFormClass}>
+            <InlineGroup>
+              <Select id="secret-type" name="type">
+                <option value="string">string</option>
+                <option value="json">json</option>
+              </Select>
+              <Button type="submit" variant="primary">
+                Create New Secret
+              </Button>
+            </InlineGroup>
+          </form>
+        </div>
         <SecretsList secrets={secrets} />
       </Paper>
     </Layout>

@@ -13,7 +13,7 @@ const baseCardClass = css`
 
   ${utility.flex({ direction: "column", gap: 1, padding: 3 })};
   border: 1px solid rgba(148, 163, 184, 0.22);
-  ${utility.cornerSuperellipse()};
+  ${utility.cornerShape.superellipse};
   border-radius: 0.5rem;
 `;
 

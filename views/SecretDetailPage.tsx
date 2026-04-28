@@ -1,4 +1,4 @@
-import { Link, Paper, utility } from "@dldc/hono-ui";
+import { ButtonLink, Link, Paper, utility } from "@dldc/hono-ui";
 import { css, cx } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
@@ -36,6 +36,10 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     column-gap: 1rem;
     row-gap: 0.85rem;
     align-items: center;
+  `;
+
+  const actionsClass = css`
+    ${utility.flex({ justify: "end" })};
   `;
 
   const labelClass = css`
@@ -76,6 +80,12 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
       </Link>
       <Paper class={contentClass}>
         <h2 class={titleClass}>{secret.name}</h2>
+
+        <div class={actionsClass}>
+          <ButtonLink href={`/secrets/create?name=${encodeURIComponent(secret.name)}`}>
+            Rotate
+          </ButtonLink>
+        </div>
 
         <dl class={detailsGridClass}>
           {description

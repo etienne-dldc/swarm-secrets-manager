@@ -20,7 +20,7 @@ export const MissingSecretRow: FC<MissingSecretRowProps> = ({ secret }) => {
       align: "start",
     })};
     border: 1px solid rgba(148, 163, 184, 0.22);
-    ${utility.cornerSuperellipse()};
+    ${utility.cornerShape.superellipse};
     border-radius: 0.5rem;
   `;
 
@@ -67,7 +67,11 @@ export const MissingSecretRow: FC<MissingSecretRowProps> = ({ secret }) => {
         </div>
         <p class={descriptionClass}>{secret.description}</p>
       </Stack>
-      <ButtonLink href="#">Create</ButtonLink>
+      <ButtonLink
+        href={`/secrets/create?name=${encodeURIComponent(secret.name)}`}
+      >
+        Create
+      </ButtonLink>
     </div>
   );
 };
