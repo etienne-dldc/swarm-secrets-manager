@@ -1,5 +1,6 @@
 import { type Context, Hono, type HonoRequest } from "hono";
 import { serveStatic } from "hono/deno";
+import denoJson from "./deno.json" with { type: "json" };
 import {
   createActualApi,
   createMockApi,
@@ -19,6 +20,8 @@ import { SecretsPage } from "./views/SecretsPage.tsx";
 
 const PORT = Number(Deno.env.get("PORT") ?? "3000");
 const config = await loadConfigFromPath(CONFIG_JSON_PATH);
+
+console.log(`Starting Swarm Secrets Manager v${denoJson.version}`);
 
 if (config) {
   console.log(
