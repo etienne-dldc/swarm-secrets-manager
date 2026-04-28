@@ -35,6 +35,12 @@ const mockSecrets = new Map<string, MockResource>([
       createdAt: "2026-04-27T14:45:00.000Z",
     },
   ],
+  ["secret-git-access-token-004", {
+    id: "secret-git-access-token-004",
+    name: "git_access_token",
+    value: "dev-git-access-token",
+    createdAt: "2026-04-28T09:00:00.000Z",
+  }],
 ]);
 
 const mockConfigs = new Map<string, MockResource>([

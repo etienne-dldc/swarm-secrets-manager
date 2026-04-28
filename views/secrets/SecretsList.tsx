@@ -1,11 +1,11 @@
 import { utility } from "@dldc/hono-ui";
 import { css } from "hono/css";
 import type { FC } from "hono/jsx";
-import type { SecretView } from "../../logic/api/index.ts";
+import type { SecretListItem } from "../../logic/secretListItems.ts";
 import { SecretsRow } from "./SecretsRow.tsx";
 
 type SecretsListProps = {
-  secrets: SecretView[];
+  secrets: SecretListItem[];
 };
 
 const listClass = css`
@@ -28,7 +28,11 @@ export const SecretsList: FC<SecretsListProps> = ({ secrets }) => {
   return (
     <ul class={listClass}>
       {secrets.map((secret) => (
-        <li key={secret.id}>
+        <li
+          key={secret.status === "existing"
+            ? secret.id
+            : `missing:${secret.name}`}
+        >
           <SecretsRow secret={secret} />
         </li>
       ))}

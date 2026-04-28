@@ -1,0 +1,44 @@
+{
+  "secrets": [
+    {
+      "name": "git_access_token",
+      "type": "string",
+      "description": "Access token used by Doco-CD to pull the repository"
+    },
+    {
+      "name": "webhook_secret",
+      "type": "string",
+      "description": "Shared secret used to validate incoming webhook payloads",
+      "options": {
+        "allowGenerate": true,
+        "generateHexBytes": 32
+      }
+    },
+    {
+      "name": "doco_cd_api_secret",
+      "type": "string",
+      "description": "API secret for Doco-CD admin operations",
+      "options": {
+        "allowGenerate": true,
+        "generateHexBytes": 32
+      }
+    },
+    {
+      "name": "docker_config_json",
+      "type": "json",
+      "description": "Single-line Docker config JSON used for private registry authentication",
+      "options": {
+        "defaultTemplate": "{\"auths\":{\"registry.example.com\":{\"auth\":\"...\"}}}"
+      }
+    },
+    {
+      "name": "nforwardauth_token_secret",
+      "type": "string",
+      "description": "Token signing secret used by nforwardauth",
+      "options": {
+        "allowGenerate": true,
+        "generateHexBytes": 32
+      }
+    }
+  ]
+}

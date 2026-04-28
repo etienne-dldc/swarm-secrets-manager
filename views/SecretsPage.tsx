@@ -2,11 +2,11 @@ import { Paper, utility } from "@dldc/hono-ui";
 import { css } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
-import type { SecretView } from "../logic/api/index.ts";
+import type { SecretListItem } from "../logic/secretListItems.ts";
 import { SecretsList } from "./secrets/SecretsList.tsx";
 
 type SecretsPageProps = {
-  secrets: SecretView[];
+  secrets: SecretListItem[];
   ok?: string | null;
   error?: string | null;
 };

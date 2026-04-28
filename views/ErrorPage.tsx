@@ -50,14 +50,14 @@ export const ErrorPage: FC<ErrorPageProps> = ({
 
   return (
     <Layout>
+      <Link href={returnPath}>
+        <span class={linkClass}>← {returnLabel}</span>
+      </Link>
       <Paper class={containerClass}>
         <div class={headerClass}>
           <h2 class={titleClass}>{title}</h2>
         </div>
         <p class={messageClass}>{message}</p>
-        <Link href={returnPath}>
-          <span class={linkClass}>← {returnLabel}</span>
-        </Link>
       </Paper>
     </Layout>
   );

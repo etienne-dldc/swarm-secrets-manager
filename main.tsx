@@ -7,6 +7,7 @@ import {
 import { CONFIG_JSON_PATH, loadConfigFromPath } from "./logic/loadConfig.ts";
 import { redirectTo } from "./logic/redirectTo.ts";
 import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
+import { buildSecretListItems } from "./logic/secretListItems.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
 import { ErrorPage } from "./views/ErrorPage.tsx";
 import { NotFoundPage } from "./views/NotFoundPage.tsx";
@@ -82,10 +83,11 @@ app.get("/", () => {
 app.get("/secrets", async (c) => {
   try {
     const secrets = await api.listSecrets();
+    const secretListItems = buildSecretListItems(secrets, config);
     const { ok, error } = getFlash(c);
 
     return await c.html(
-      <SecretsPage secrets={secrets} ok={ok} error={error} />,
+      <SecretsPage secrets={secretListItems} ok={ok} error={error} />,
       200,
       { "cache-control": "no-store" },
     );
