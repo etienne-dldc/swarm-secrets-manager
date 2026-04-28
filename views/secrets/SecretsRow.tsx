@@ -1,5 +1,5 @@
-import { Link, utility } from "@dldc/hono-ui";
-import { css, cx } from "hono/css";
+import { utility } from "@dldc/hono-ui";
+import { css } from "hono/css";
 import type { FC } from "hono/jsx";
 import type { SecretView } from "../../logic/api/index.ts";
 
@@ -12,9 +12,7 @@ export const SecretsRow: FC<SecretsRowProps> = ({ secret }) => {
     text-decoration: none;
     color: inherit;
     display: block;
-  `;
 
-  const itemClass = css`
     ${utility.flex({ direction: "column", gap: 1, padding: 3 })};
     border: 1px solid rgba(148, 163, 184, 0.22);
     ${utility.cornerSuperellipse()};
@@ -44,11 +42,9 @@ export const SecretsRow: FC<SecretsRowProps> = ({ secret }) => {
   `;
 
   return (
-    <Link href={`/secret/${secret.id}`}>
-      <div class={cx(linkClass, itemClass)}>
-        <p class={nameClass}>{secret.name}</p>
-        <p class={metaClass}>{secret.createdAt}</p>
-      </div>
-    </Link>
+    <a href={`/secret/${secret.id}`} class={linkClass}>
+      <p class={nameClass}>{secret.name}</p>
+      <p class={metaClass}>{secret.createdAt}</p>
+    </a>
   );
 };
