@@ -1,4 +1,4 @@
-import { ButtonLink, Link, Paper, utility } from "@dldc/hono-ui";
+import { ButtonLink, Link, Paper, Stack, utility } from "@dldc/hono-ui";
 import { css, cx } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
@@ -79,13 +79,17 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
         <span class={backLinkClass}>← Back to Secrets</span>
       </Link>
       <Paper class={contentClass}>
-        <h2 class={titleClass}>{secret.name}</h2>
+        <Stack direction="row" align="center" justify="between">
+          <h2 class={titleClass}>{secret.name}</h2>
 
-        <div class={actionsClass}>
-          <ButtonLink href={`/secrets/create?name=${encodeURIComponent(secret.name)}`}>
-            Rotate
-          </ButtonLink>
-        </div>
+          <div class={actionsClass}>
+            <ButtonLink
+              href={`/secrets/create?name=${encodeURIComponent(secret.name)}`}
+            >
+              Rotate
+            </ButtonLink>
+          </div>
+        </Stack>
 
         <dl class={detailsGridClass}>
           {description

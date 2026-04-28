@@ -45,7 +45,7 @@ export const SecretsPage: FC<SecretsPageProps> = ({ secrets, ok, error }) => {
           </h2>
           <form method="get" action="/secrets/create" class={createFormClass}>
             <InlineGroup>
-              <Select id="secret-type" name="type">
+              <Select id="secret-type" name="type" variant="primary">
                 <option value="string">string</option>
                 <option value="json">json</option>
               </Select>
