@@ -1,4 +1,4 @@
-import { type Context, Hono } from "hono";
+import { type Context, Hono, type HonoRequest } from "hono";
 import {
   createActualApi,
   createMockApi,
@@ -7,8 +7,10 @@ import {
 import { redirectTo } from "./logic/redirectTo.ts";
 import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
+import { ErrorPage } from "./views/ErrorPage.tsx";
 import { NotFoundPage } from "./views/NotFoundPage.tsx";
 import { SecretsPage } from "./views/SecretsPage.tsx";
+import { SecretDetailPage } from "./views/secrets/SecretDetailPage.tsx";
 
 const PORT = Number(Deno.env.get("PORT") ?? "8080");
 const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
@@ -24,11 +26,45 @@ function getFlash(c: Context) {
 
 const app = new Hono();
 
+app.onError((err, c) => {
+  console.error(err);
+  const message = err instanceof Error
+    ? err.message
+    : "An unexpected error occurred";
+  const returnPath = getReferrerOrDefault(c.req);
+
+  return c.html(
+    <ErrorPage
+      title="Error"
+      message={message}
+      returnPath={returnPath}
+      returnLabel={returnPath === "/secrets" ? "Back to Secrets" : "Back"}
+    />,
+    500,
+    { "cache-control": "no-store" },
+  );
+});
+
 app.notFound((c) => {
   return c.html(<NotFoundPage />, 404, {
     "cache-control": "no-store",
   });
 });
+
+function getReferrerOrDefault(req: HonoRequest): string {
+  const referrer = req.header("referer");
+  if (
+    referrer && (referrer.includes("/secrets") || referrer.includes("/configs"))
+  ) {
+    try {
+      const url = new URL(referrer);
+      return url.pathname;
+    } catch {
+      // Fall through to default
+    }
+  }
+  return "/secrets";
+}
 
 app.get("/", () => {
   return redirectTo("/secrets");
@@ -46,11 +82,30 @@ app.get("/secrets", async (c) => {
     );
   } catch (error) {
     console.error(error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/secrets",
-      "error",
-      `Unable to list secrets: ${message}`,
+    throw new Error(
+      `Unable to list secrets: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    );
+  }
+});
+
+app.get("/secret/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const secret = await api.getSecret(id);
+    const { ok, error } = getFlash(c);
+
+    return await c.html(
+      <SecretDetailPage secret={secret} ok={ok} error={error} />,
+      200,
+      { "cache-control": "no-store" },
+    );
+  } catch (error) {
+    throw new Error(
+      `Unable to load secret: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });
@@ -66,11 +121,10 @@ app.get("/configs", async (c) => {
       { "cache-control": "no-store" },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/configs",
-      "error",
-      `Unable to list configs: ${message}`,
+    throw new Error(
+      `Unable to list configs: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });
@@ -83,14 +137,10 @@ app.post("/secrets/create", async (c) => {
 
     const invalidName = api.validateSecretName(name);
     if (invalidName) {
-      return redirectWithMessage("/secrets", "error", invalidName);
+      throw new Error(invalidName);
     }
     if (value.length === 0) {
-      return redirectWithMessage(
-        "/secrets",
-        "error",
-        "Secret value cannot be empty.",
-      );
+      throw new Error("Secret value cannot be empty.");
     }
 
     await api.createSecret(name, value);
@@ -104,11 +154,10 @@ app.post("/secrets/create", async (c) => {
 
     return redirectWithMessage("/secrets", "ok", `Secret ${name} created.`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/secrets",
-      "error",
-      `Create failed: ${message}`,
+    throw new Error(
+      `Create failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });
@@ -120,11 +169,7 @@ app.post("/secrets/delete", async (c) => {
     const name = String(form.get("name") ?? "").trim();
 
     if (id.length === 0) {
-      return redirectWithMessage(
-        "/secrets",
-        "error",
-        "Missing secret id for delete.",
-      );
+      throw new Error("Missing secret id for delete.");
     }
 
     await api.deleteSecret(id);
@@ -143,11 +188,10 @@ app.post("/secrets/delete", async (c) => {
       `Secret ${api.formatSecretDeleteLabel(id, name)} deleted.`,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/secrets",
-      "error",
-      `Delete failed: ${message}`,
+    throw new Error(
+      `Delete failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });
@@ -160,14 +204,10 @@ app.post("/configs/create", async (c) => {
 
     const invalidName = api.validateConfigName(name);
     if (invalidName) {
-      return redirectWithMessage("/configs", "error", invalidName);
+      throw new Error(invalidName);
     }
     if (value.length === 0) {
-      return redirectWithMessage(
-        "/configs",
-        "error",
-        "Config value cannot be empty.",
-      );
+      throw new Error("Config value cannot be empty.");
     }
 
     await api.createConfig(name, value);
@@ -181,11 +221,10 @@ app.post("/configs/create", async (c) => {
 
     return redirectWithMessage("/configs", "ok", `Config ${name} created.`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/configs",
-      "error",
-      `Create failed: ${message}`,
+    throw new Error(
+      `Create failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });
@@ -197,11 +236,7 @@ app.post("/configs/delete", async (c) => {
     const name = String(form.get("name") ?? "").trim();
 
     if (id.length === 0) {
-      return redirectWithMessage(
-        "/configs",
-        "error",
-        "Missing config id for delete.",
-      );
+      throw new Error("Missing config id for delete.");
     }
 
     await api.deleteConfig(id);
@@ -220,11 +255,10 @@ app.post("/configs/delete", async (c) => {
       `Config ${api.formatConfigDeleteLabel(id, name)} deleted.`,
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return redirectWithMessage(
-      "/configs",
-      "error",
-      `Delete failed: ${message}`,
+    throw new Error(
+      `Delete failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 });

@@ -61,6 +61,7 @@ const mockConfigs = new Map<string, MockResource>([
 export function createMockApi(): DockerApi {
   return {
     listSecrets: () => Promise.resolve(toSecretViews(mockSecrets)),
+    getSecret: (id) => getResource(mockSecrets, id, "secret"),
     createSecret: (name, value) => createResource(mockSecrets, name, value),
     deleteSecret: (id) => deleteResource(mockSecrets, id, "secret"),
     validateSecretName: validateResourceName,
@@ -159,6 +160,30 @@ function createResource(
   });
 
   return Promise.resolve();
+}
+
+function getResource(
+  resources: Map<string, MockResource>,
+  id: string,
+  kind: "secret" | "config",
+): Promise<SecretView | ConfigView> {
+  const resource = resources.get(id);
+  if (!resource) {
+    throw new Error(`${kind} ${id} not found`);
+  }
+  return Promise.resolve({
+    docker: {
+      ID: resource.id,
+      CreatedAt: resource.createdAt,
+      Spec: {
+        Name: resource.name,
+      },
+    },
+    id: resource.id,
+    name: resource.name,
+    shortId: shortId(resource.id),
+    createdAt: formatDate(resource.createdAt),
+  });
 }
 
 function deleteResource(

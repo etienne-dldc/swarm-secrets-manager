@@ -22,6 +22,7 @@ type NamedDockerResource = DockerSecret | DockerConfig;
 export function createActualApi(): DockerApi {
   return {
     listSecrets: () => listResources<DockerSecret>("secret"),
+    getSecret: (id) => getResource<DockerSecret>("secret", id),
     createSecret: (name, value) => createResource("secret", name, value),
     deleteSecret: (id) => deleteResource("secret", id),
     validateSecretName: validateResourceName,
@@ -177,6 +178,22 @@ async function listResources<TResource extends NamedDockerResource>(
   });
 
   return parsed.map((resource) => toResourceView(resource));
+}
+
+async function getResource<TResource extends NamedDockerResource>(
+  kind: ResourceKind,
+  id: string,
+): Promise<ResourceView<TResource>> {
+  const response = await dockerApi(
+    "GET",
+    `${getCollectionPath(kind)}/${encodeURIComponent(id)}`,
+  );
+  if (response.status !== 200) {
+    throw new Error(extractDockerMessage(response.body));
+  }
+
+  const resource = JSON.parse(response.body) as TResource;
+  return toResourceView(resource);
 }
 
 async function createResource(
