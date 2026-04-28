@@ -12,7 +12,7 @@ import { NotFoundPage } from "./views/NotFoundPage.tsx";
 import { SecretsPage } from "./views/SecretsPage.tsx";
 import { SecretDetailPage } from "./views/secrets/SecretDetailPage.tsx";
 
-const PORT = Number(Deno.env.get("PORT") ?? "8080");
+const PORT = Number(Deno.env.get("PORT") ?? "3000");
 const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
   ? createMockApi()
   : createActualApi();
