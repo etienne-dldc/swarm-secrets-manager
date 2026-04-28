@@ -1,5 +1,13 @@
-import { ButtonLink, Link, Paper, Stack, utility } from "@dldc/hono-ui";
-import { css, cx } from "hono/css";
+import {
+  ButtonLink,
+  FormField,
+  Input,
+  Link,
+  Paper,
+  Stack,
+  utility,
+} from "@dldc/hono-ui";
+import { css } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../components/Layout.tsx";
 import type { SecretView } from "../logic/api/index.ts";
@@ -30,18 +38,13 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     margin: 0;
   `;
 
-  const headerMetaClass = css`
-    ${utility.flex({ direction: "row", gap: 2, align: "center" })};
-    flex-wrap: wrap;
-  `;
-
   const actionsClass = css`
     ${utility.flex({ justify: "end" })};
   `;
 
   const descriptionClass = css`
-    ${utility.textSize("lg")};
-    ${utility.textColor("gray.100")};
+    ${utility.textSize("base")};
+    ${utility.textColor("gray.400")};
     margin: 0;
   `;
 
@@ -64,37 +67,6 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     margin: 0;
   `;
 
-  const detailsRowsClass = css`
-    ${utility.flex({ direction: "column", gap: 2 })};
-  `;
-
-  const detailRowClass = css`
-    ${utility.flex({ direction: "column", gap: 0 })};
-    border-left: 2px solid rgba(148, 163, 184, 0.25);
-    padding-left: 0.75rem;
-  `;
-
-  const detailLabelClass = css`
-    ${utility.textSize("xs")};
-    ${utility.textColor("gray.300")};
-    ${utility.fontWeight("bold")};
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0;
-  `;
-
-  const valueClass = css`
-    ${utility.textSize("lg")};
-    margin: 0;
-    word-break: break-all;
-  `;
-
-  const codeClass = css`
-    font-family:
-      ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
-      Liberation Mono, Courier New, monospace;
-  `;
-
   const backLinkClass = css`
     ${utility.textColor("blue.400")};
     text-decoration: none;
@@ -111,9 +83,11 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
         <span class={backLinkClass}>← Back to Secrets</span>
       </Link>
       <Paper class={contentClass}>
-        <Stack direction="row" align="center" justify="between">
-          <h2 class={titleClass}>{secret.name}</h2>
-
+        <Stack direction="row" align="center" justify="between" gap={2}>
+          <Stack direction="row" align="center" gap={3}>
+            <h2 class={titleClass}>{secret.name}</h2>
+            {type ? <span class={typeBadgeClass}>{type}</span> : null}
+          </Stack>
           <div class={actionsClass}>
             <ButtonLink
               href={`/secrets/create?name=${encodeURIComponent(secret.name)}`}
@@ -122,25 +96,14 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
             </ButtonLink>
           </div>
         </Stack>
-
-        <div class={headerMetaClass}>
-          {type ? <span class={typeBadgeClass}>{type}</span> : null}
-          <p class={createdTextClass}>Created {secret.createdAt}</p>
-        </div>
-
         {description ? <p class={descriptionClass}>{description}</p> : null}
-
-        <div class={detailsRowsClass}>
-          <div class={detailRowClass}>
-            <p class={detailLabelClass}>Short ID</p>
-            <p class={cx(valueClass, codeClass)}>{secret.shortId}</p>
-          </div>
-
-          <div class={detailRowClass}>
-            <p class={detailLabelClass}>Full ID</p>
-            <p class={cx(valueClass, codeClass)}>{secret.id}</p>
-          </div>
-        </div>
+        <p class={descriptionClass}>Created {secret.createdAt}</p>
+        <FormField label="Id" id="id">
+          <Input id="id" value={secret.id} readOnly />
+        </FormField>
+        <FormField label="Short Id" id="shortId">
+          <Input id="shortId" value={secret.shortId} readOnly />
+        </FormField>
       </Paper>
     </Layout>
   );
