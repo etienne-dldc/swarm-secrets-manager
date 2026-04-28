@@ -101,6 +101,8 @@ async function dockerApi(
     );
   }
 
+  console.log(`[docker] ${method} ${path}`);
+
   const output = await new Deno.Command("curl", {
     args,
     stdout: "piped",
@@ -109,21 +111,38 @@ async function dockerApi(
 
   if (output.code !== 0) {
     const stderr = new TextDecoder().decode(output.stderr).trim();
-    throw new Error(stderr || "curl command failed");
+    console.error(`[docker] curl exited with code ${output.code}`);
+    console.error(`[docker] stderr: ${stderr}`);
+    throw new Error(
+      `curl command failed (exit ${output.code}): ${stderr || "(no stderr)"}`,
+    );
   }
 
   const text = new TextDecoder().decode(output.stdout);
-  const separatorIndex = text.lastIndexOf("\\n");
+  // curl appends "\n<status_code>" via -w "\n%{http_code}"; curl interprets \n
+  // as an actual newline character, so we search for "\n" (not "\\n").
+  const separatorIndex = text.lastIndexOf("\n");
   if (separatorIndex < 0) {
-    throw new Error("Unexpected Docker API response");
+    console.error(`[docker] raw response (${text.length} bytes): ${text}`);
+    throw new Error(
+      `Unexpected Docker API response for ${method} ${path}: no status-code separator found`,
+    );
   }
 
   const body = text.slice(0, separatorIndex);
-  const status = Number(text.slice(separatorIndex + 1).trim());
+  const statusRaw = text.slice(separatorIndex + 1).trim();
+  const status = Number(statusRaw);
   if (Number.isNaN(status)) {
-    throw new Error("Unable to parse Docker API status code");
+    console.error(`[docker] raw status string: ${JSON.stringify(statusRaw)}`);
+    console.error(`[docker] raw body: ${body}`);
+    throw new Error(
+      `Unable to parse Docker API status code for ${method} ${path}: got ${
+        JSON.stringify(statusRaw)
+      }`,
+    );
   }
 
+  console.log(`[docker] ${method} ${path} → ${status}`);
   return { status, body };
 }
 
@@ -167,7 +186,14 @@ async function listResources<TResource extends NamedDockerResource>(
 ): Promise<ResourceView<TResource>[]> {
   const response = await dockerApi("GET", getCollectionPath(kind));
   if (response.status !== 200) {
-    throw new Error(extractDockerMessage(response.body));
+    console.error(
+      `[docker] list ${kind}s failed: status=${response.status} body=${response.body}`,
+    );
+    throw new Error(
+      `Docker returned ${response.status} listing ${kind}s: ${
+        extractDockerMessage(response.body)
+      }`,
+    );
   }
 
   const parsed = JSON.parse(response.body) as TResource[];
@@ -189,7 +215,14 @@ async function getResource<TResource extends NamedDockerResource>(
     `${getCollectionPath(kind)}/${encodeURIComponent(id)}`,
   );
   if (response.status !== 200) {
-    throw new Error(extractDockerMessage(response.body));
+    console.error(
+      `[docker] get ${kind} ${id} failed: status=${response.status} body=${response.body}`,
+    );
+    throw new Error(
+      `Docker returned ${response.status} getting ${kind} ${id}: ${
+        extractDockerMessage(response.body)
+      }`,
+    );
   }
 
   const resource = JSON.parse(response.body) as TResource;
@@ -217,7 +250,14 @@ async function createResource(
     JSON.stringify(payloadBody),
   );
   if (response.status !== 201) {
-    throw new Error(extractDockerMessage(response.body));
+    console.error(
+      `[docker] create ${kind} "${name}" failed: status=${response.status} body=${response.body}`,
+    );
+    throw new Error(
+      `Docker returned ${response.status} creating ${kind} "${name}": ${
+        extractDockerMessage(response.body)
+      }`,
+    );
   }
 }
 
@@ -227,7 +267,14 @@ async function deleteResource(kind: ResourceKind, id: string): Promise<void> {
     `${getCollectionPath(kind)}/${encodeURIComponent(id)}`,
   );
   if (response.status !== 204) {
-    throw new Error(extractDockerMessage(response.body));
+    console.error(
+      `[docker] delete ${kind} ${id} failed: status=${response.status} body=${response.body}`,
+    );
+    throw new Error(
+      `Docker returned ${response.status} deleting ${kind} ${id}: ${
+        extractDockerMessage(response.body)
+      }`,
+    );
   }
 }
 

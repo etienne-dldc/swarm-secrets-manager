@@ -2,6 +2,9 @@
   "name": "swarm-secrets-manager",
   "version": "1.0.0",
   "tasks": {
+    "bump": "deno run -A jsr:@mys/bump@1",
+    "deps:outdated": "deno outdated",
+    "deps:update": "deno outdated --update --latest --interactive",
     "start": "deno run --allow-net --allow-env --allow-read=/app --allow-run=curl --no-prompt main.tsx",
     "dev": "MOCK_SECRETS_API=1 CONFIG_JSON_PATH=./config.local.json deno run --allow-net --allow-env --allow-read=. --allow-run=curl --no-prompt --watch main.tsx",
     "openapi-ts": "deno run -A npm:@hey-api/openapi-ts"
