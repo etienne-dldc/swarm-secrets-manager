@@ -11,8 +11,8 @@ import { buildSecretListItems } from "./logic/secretListItems.ts";
 import { ConfigsPage } from "./views/ConfigsPage.tsx";
 import { ErrorPage } from "./views/ErrorPage.tsx";
 import { NotFoundPage } from "./views/NotFoundPage.tsx";
+import { SecretDetailPage } from "./views/SecretDetailPage.tsx";
 import { SecretsPage } from "./views/SecretsPage.tsx";
-import { SecretDetailPage } from "./views/secrets/SecretDetailPage.tsx";
 
 const PORT = Number(Deno.env.get("PORT") ?? "3000");
 const config = await loadConfigFromPath(CONFIG_JSON_PATH);
@@ -104,10 +104,19 @@ app.get("/secrets", async (c) => {
 app.get("/secret/:id", async (c) => {
   const id = c.req.param("id");
   const secret = await api.getSecret(id);
+  const expectedSecret = config?.secrets.find((item) =>
+    item.name === secret.name
+  );
   const { ok, error } = getFlash(c);
 
   return await c.html(
-    <SecretDetailPage secret={secret} ok={ok} error={error} />,
+    <SecretDetailPage
+      secret={secret}
+      description={expectedSecret?.description ?? null}
+      type={expectedSecret?.type ?? null}
+      ok={ok}
+      error={error}
+    />,
     200,
     { "cache-control": "no-store" },
   );

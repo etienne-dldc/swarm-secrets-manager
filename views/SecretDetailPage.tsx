@@ -1,30 +1,27 @@
 import { Link, Paper, utility } from "@dldc/hono-ui";
 import { css, cx } from "hono/css";
 import type { FC } from "hono/jsx";
-import { Layout } from "../../components/Layout.tsx";
-import type { SecretView } from "../../logic/api/index.ts";
+import { Layout } from "../components/Layout.tsx";
+import type { SecretView } from "../logic/api/index.ts";
+import type { TSecretType } from "../logic/configSchema.ts";
 
 type SecretDetailPageProps = {
   secret: SecretView;
+  description?: string | null;
+  type?: TSecretType | null;
   ok?: string | null;
   error?: string | null;
 };
 
 export const SecretDetailPage: FC<SecretDetailPageProps> = ({
   secret,
+  description,
+  type,
   ok,
   error,
 }) => {
-  const wrapperClass = css`
-    ${utility.flex({ direction: "column", gap: 3 })};
-  `;
-
   const contentClass = css`
-    ${utility.flex({ direction: "column", gap: 3, padding: 3 })};
-  `;
-
-  const headerClass = css`
-    ${utility.flex({ direction: "column", gap: 1 })};
+    ${utility.flex({ direction: "column", gap: 4, padding: 3 })};
   `;
 
   const titleClass = css`
@@ -33,17 +30,15 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     margin: 0;
   `;
 
-  const metaGridClass = css`
-    ${utility.flex({ direction: "column", gap: 2 })};
+  const detailsGridClass = css`
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 1rem;
+    row-gap: 0.85rem;
+    align-items: center;
   `;
 
-  const metaRowClass = css`
-    ${utility.flex({ direction: "column", gap: 1, padding: 3 })};
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 0.5rem;
-  `;
-
-  const metaLabelClass = css`
+  const labelClass = css`
     ${utility.textSize("sm")};
     ${utility.textColor("gray.300")};
     ${utility.fontWeight("bold")};
@@ -52,7 +47,7 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     letter-spacing: 0.05em;
   `;
 
-  const metaValueClass = css`
+  const valueClass = css`
     ${utility.textSize("lg")};
     margin: 0;
     word-break: break-all;
@@ -82,22 +77,34 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
       <Paper class={contentClass}>
         <h2 class={titleClass}>{secret.name}</h2>
 
-        <div class={metaGridClass}>
-          <div class={metaRowClass}>
-            <p class={metaLabelClass}>Full ID</p>
-            <p class={cx(metaValueClass, codeClass)}>{secret.id}</p>
-          </div>
+        <dl class={detailsGridClass}>
+          {description
+            ? (
+              <>
+                <dt class={labelClass}>Description</dt>
+                <dd class={valueClass}>{description}</dd>
+              </>
+            )
+            : null}
 
-          <div class={metaRowClass}>
-            <p class={metaLabelClass}>Short ID</p>
-            <p class={cx(metaValueClass, codeClass)}>{secret.shortId}</p>
-          </div>
+          {type
+            ? (
+              <>
+                <dt class={labelClass}>Type</dt>
+                <dd class={cx(valueClass, codeClass)}>{type}</dd>
+              </>
+            )
+            : null}
 
-          <div class={metaRowClass}>
-            <p class={metaLabelClass}>Created</p>
-            <p class={metaValueClass}>{secret.createdAt}</p>
-          </div>
-        </div>
+          <dt class={labelClass}>Created</dt>
+          <dd class={valueClass}>{secret.createdAt}</dd>
+
+          <dt class={labelClass}>Short ID</dt>
+          <dd class={cx(valueClass, codeClass)}>{secret.shortId}</dd>
+
+          <dt class={labelClass}>Full ID</dt>
+          <dd class={cx(valueClass, codeClass)}>{secret.id}</dd>
+        </dl>
       </Paper>
     </Layout>
   );
