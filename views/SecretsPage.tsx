@@ -19,6 +19,15 @@ export const SecretsPage: FC<SecretsPageProps> = ({ secrets, ok, error }) => {
           ${utility.flex({ gap: 2, padding: 3, direction: "column" })};
         `}
       >
+        <h2
+          class={css`
+            ${utility.textSize("lg")};
+            ${utility.fontWeight("semibold")};
+            text-transform: uppercase;
+          `}
+        >
+          Secrets
+        </h2>
         <SecretsList secrets={secrets} />
       </Paper>
     </Layout>

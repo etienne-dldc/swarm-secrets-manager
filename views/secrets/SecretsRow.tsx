@@ -22,6 +22,9 @@ export const SecretsRow: FC<SecretsRowProps> = ({ secret }) => {
     &:hover {
       background: rgba(148, 163, 184, 0.08);
       border-color: rgba(148, 163, 184, 0.38);
+      & p:first-child {
+        text-decoration: underline;
+      }
     }
   `;
 

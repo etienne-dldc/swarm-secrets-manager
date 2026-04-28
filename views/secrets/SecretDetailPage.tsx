@@ -1,5 +1,5 @@
 import { Link, Paper, utility } from "@dldc/hono-ui";
-import { css } from "hono/css";
+import { css, cx } from "hono/css";
 import type { FC } from "hono/jsx";
 import { Layout } from "../../components/Layout.tsx";
 import type { SecretView } from "../../logic/api/index.ts";
@@ -19,6 +19,10 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
     ${utility.flex({ direction: "column", gap: 3 })};
   `;
 
+  const contentClass = css`
+    ${utility.flex({ direction: "column", gap: 3, padding: 3 })};
+  `;
+
   const headerClass = css`
     ${utility.flex({ direction: "column", gap: 1 })};
   `;
@@ -26,11 +30,6 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
   const titleClass = css`
     ${utility.textSize("2xl")};
     ${utility.fontWeight("bold")};
-    margin: 0;
-  `;
-
-  const subtitleClass = css`
-    ${utility.textColor("gray.200")};
     margin: 0;
   `;
 
@@ -77,31 +76,29 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
 
   return (
     <Layout title={secret.name} activeTab="secrets" ok={ok} error={error}>
-      <div class={wrapperClass}>
-        <div class={headerClass}>
-          <h2 class={titleClass}>{secret.name}</h2>
-          <Link href="/secrets">
-            <span class={backLinkClass}>← Back to Secrets</span>
-          </Link>
-        </div>
+      <Link href="/secrets">
+        <span class={backLinkClass}>← Back to Secrets</span>
+      </Link>
+      <Paper class={contentClass}>
+        <h2 class={titleClass}>{secret.name}</h2>
 
         <div class={metaGridClass}>
-          <Paper class={metaRowClass}>
+          <div class={metaRowClass}>
             <p class={metaLabelClass}>Full ID</p>
-            <p class={`${metaValueClass} ${codeClass}`}>{secret.id}</p>
-          </Paper>
+            <p class={cx(metaValueClass, codeClass)}>{secret.id}</p>
+          </div>
 
-          <Paper class={metaRowClass}>
+          <div class={metaRowClass}>
             <p class={metaLabelClass}>Short ID</p>
-            <p class={`${metaValueClass} ${codeClass}`}>{secret.shortId}</p>
-          </Paper>
+            <p class={cx(metaValueClass, codeClass)}>{secret.shortId}</p>
+          </div>
 
-          <Paper class={metaRowClass}>
+          <div class={metaRowClass}>
             <p class={metaLabelClass}>Created</p>
             <p class={metaValueClass}>{secret.createdAt}</p>
-          </Paper>
+          </div>
         </div>
-      </div>
+      </Paper>
     </Layout>
   );
 };

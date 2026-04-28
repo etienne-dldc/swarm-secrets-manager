@@ -91,23 +91,15 @@ app.get("/secrets", async (c) => {
 });
 
 app.get("/secret/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const secret = await api.getSecret(id);
-    const { ok, error } = getFlash(c);
+  const id = c.req.param("id");
+  const secret = await api.getSecret(id);
+  const { ok, error } = getFlash(c);
 
-    return await c.html(
-      <SecretDetailPage secret={secret} ok={ok} error={error} />,
-      200,
-      { "cache-control": "no-store" },
-    );
-  } catch (error) {
-    throw new Error(
-      `Unable to load secret: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
-  }
+  return await c.html(
+    <SecretDetailPage secret={secret} ok={ok} error={error} />,
+    200,
+    { "cache-control": "no-store" },
+  );
 });
 
 app.get("/configs", async (c) => {
