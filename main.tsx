@@ -1,4 +1,5 @@
 import { type Context, Hono, type HonoRequest } from "hono";
+import { serveStatic } from "hono/deno";
 import {
   createActualApi,
   createMockApi,
@@ -41,6 +42,13 @@ function getFlash(c: Context) {
 }
 
 const app = new Hono();
+
+app.use(
+  "/public/*",
+  serveStatic({
+    root: "./",
+  }),
+);
 
 app.onError((err, c) => {
   console.error(err);
@@ -188,6 +196,7 @@ app.post("/secrets/create", async (c) => {
   try {
     const form = await c.req.formData();
     const name = String(form.get("name") ?? "").trim();
+    const type = String(form.get("type") ?? "").trim();
     const value = String(form.get("value") ?? "");
     const overwriteExisting =
       String(form.get("overwriteExisting") ?? "") === "1";
@@ -201,6 +210,22 @@ app.post("/secrets/create", async (c) => {
     }
     if (value.length === 0) {
       throw new Error("Secret value cannot be empty.");
+    }
+
+    if (!isSecretType(type)) {
+      throw new Error("Invalid secret type.");
+    }
+
+    if (type === "json") {
+      try {
+        JSON.parse(value);
+      } catch {
+        return redirectWithMessage(
+          `/secrets/create?type=json&name=${encodeURIComponent(name)}`,
+          "error",
+          "Invalid JSON value.",
+        );
+      }
     }
 
     if (overwriteExisting) {

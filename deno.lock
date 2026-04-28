@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@dldc/css-builder@^1.5.0": "1.5.0",
-    "jsr:@dldc/hono-ui@^1.3.1": "1.3.1",
+    "jsr:@dldc/hono-ui@^1.4.0": "1.4.0",
     "jsr:@hono/hono@^4.12.14": "4.12.15",
     "jsr:@valibot/valibot@^1.3.1": "1.3.1",
     "npm:@hey-api/openapi-ts@*": "0.96.1_typescript@6.0.3",
@@ -13,8 +13,8 @@
     "@dldc/css-builder@1.5.0": {
       "integrity": "2e70b80abb55e2d594f2093046ed7ff17fb836da8f380007b9347043286a944f"
     },
-    "@dldc/hono-ui@1.3.1": {
-      "integrity": "0c575c24f8aec64ee714b886b412d31b7730024801b7823934d90eaf9bebee90",
+    "@dldc/hono-ui@1.4.0": {
+      "integrity": "d79631f42c3d165026f5952fa3e581eedcfabdf37fea2624e6a9d7fdc6fe98d9",
       "dependencies": [
         "jsr:@dldc/css-builder",
         "jsr:@hono/hono",
@@ -299,7 +299,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@dldc/hono-ui@^1.3.1",
+      "jsr:@dldc/hono-ui@^1.4.0",
       "jsr:@hono/hono@^4.12.14",
       "jsr:@hono/hono@^4.12.15",
       "jsr:@valibot/valibot@^1.3.1",

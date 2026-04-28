@@ -53,10 +53,40 @@ export const CreateSecretPage: FC<CreateSecretPageProps> = ({
     margin: 0;
   `;
 
+  const titleRowClass = css`
+    ${utility.flex({ direction: "row", gap: 2, align: "center" })};
+  `;
+
   const subtitleClass = css`
     ${utility.textSize("sm")};
     ${utility.textColor("gray.200")};
     margin: 0;
+  `;
+
+  const typeRowClass = css`
+    ${utility.flex({ direction: "row", gap: 2, align: "center" })};
+  `;
+
+  const typeLabelClass = css`
+    ${utility.textSize("sm")};
+    ${utility.textColor("gray.300")};
+    ${utility.fontWeight("bold")};
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+  `;
+
+  const typeBadgeClass = css`
+    ${utility.textSize("sm")};
+    ${utility.fontWeight("bold")};
+    ${utility.textColor("gray.100")};
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(51, 65, 85, 0.25);
+    border-radius: 999px;
+    padding: 0.2rem 0.65rem;
+    font-family:
+      ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
+      Liberation Mono, Courier New, monospace;
   `;
 
   const warningClass = css`
@@ -91,7 +121,10 @@ export const CreateSecretPage: FC<CreateSecretPageProps> = ({
         <span class={backLinkClass}>← Back to Secrets</span>
       </Link>
       <Paper class={contentClass}>
-        <h2 class={titleClass}>Create Secret</h2>
+        <div class={titleRowClass}>
+          <h2 class={titleClass}>Create Secret</h2>
+          <span class={typeBadgeClass}>{type}</span>
+        </div>
         <p class={subtitleClass}>
           Create a new secret or rotate an existing one.
         </p>
@@ -156,10 +189,6 @@ export const CreateSecretPage: FC<CreateSecretPageProps> = ({
                   value={name}
                 />
               )}
-          </FormField>
-
-          <FormField id="type-view" label="Type">
-            <Input id="type-view" value={type} readOnly />
           </FormField>
 
           {description

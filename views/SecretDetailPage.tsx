@@ -1,4 +1,5 @@
 import {
+  Button,
   ButtonLink,
   FormField,
   Input,
@@ -39,7 +40,7 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
   `;
 
   const actionsClass = css`
-    ${utility.flex({ justify: "end" })};
+    ${utility.flex({ justify: "end", gap: 2 })};
   `;
 
   const descriptionClass = css`
@@ -94,15 +95,40 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
             >
               Rotate
             </ButtonLink>
+            <form
+              method="post"
+              action="/secrets/delete"
+              data-confirm={`Delete secret ${secret.name}? This action cannot be undone.`}
+            >
+              <input type="hidden" name="id" value={secret.id} />
+              <input type="hidden" name="name" value={secret.name} />
+              <Button type="submit" variant="danger">
+                Delete
+              </Button>
+            </form>
           </div>
         </Stack>
         {description ? <p class={descriptionClass}>{description}</p> : null}
-        <p class={descriptionClass}>Created {secret.createdAt}</p>
+        <p class={createdTextClass}>Created {secret.createdAt}</p>
         <FormField label="Id" id="id">
-          <Input id="id" value={secret.id} readOnly />
+          <Input
+            id="id"
+            value={secret.id}
+            readOnly
+            class={css`
+              ${utility.fontFamily("mono")};
+            `}
+          />
         </FormField>
         <FormField label="Short Id" id="shortId">
-          <Input id="shortId" value={secret.shortId} readOnly />
+          <Input
+            id="shortId"
+            value={secret.shortId}
+            readOnly
+            class={css`
+              ${utility.fontFamily("mono")};
+            `}
+          />
         </FormField>
       </Paper>
     </Layout>
