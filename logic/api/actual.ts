@@ -1,4 +1,5 @@
 import { SpanStatusCode } from "@opentelemetry/api";
+import { appEnv } from "../env.ts";
 import { recordSpanError, telemetryTracer } from "../../telemetry.ts";
 import type {
   ConfigSpec,
@@ -9,8 +10,8 @@ import type {
   SecretSpec,
 } from "./types.ts";
 
-const DOCKER_API_VERSION = Deno.env.get("DOCKER_API_VERSION") ?? "v1.43";
-const DOCKER_SOCKET = Deno.env.get("DOCKER_SOCKET") ?? "/var/run/docker.sock";
+const DOCKER_API_VERSION = appEnv.dockerApiVersion;
+const DOCKER_SOCKET = appEnv.dockerSocket;
 
 type DockerApiResponse = {
   status: number;

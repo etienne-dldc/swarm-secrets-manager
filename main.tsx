@@ -9,7 +9,8 @@ import {
   type SecretsApi,
 } from "./logic/api/index.ts";
 import type { TSecretType } from "./logic/configSchema.ts";
-import { CONFIG_JSON_PATH, loadConfigFromPath } from "./logic/loadConfig.ts";
+import { appEnv, logEnvConfiguration } from "./logic/env.ts";
+import { loadConfigFromPath } from "./logic/loadConfig.ts";
 import { redirectTo } from "./logic/redirectTo.ts";
 import { redirectWithMessage } from "./logic/redirectWithMessage.ts";
 import { buildSecretListItems } from "./logic/secretListItems.ts";
@@ -20,23 +21,21 @@ import { NotFoundPage } from "./views/NotFoundPage.tsx";
 import { SecretDetailPage } from "./views/SecretDetailPage.tsx";
 import { SecretsPage } from "./views/SecretsPage.tsx";
 
-const PORT = Number(Deno.env.get("PORT") ?? "3000");
-const config = await loadConfigFromPath(CONFIG_JSON_PATH);
+const config = await loadConfigFromPath(appEnv.configJsonPath);
 
 console.log(`Starting Swarm Secrets Manager v${denoJson.version}`);
+logEnvConfiguration(appEnv);
 console.log(
-  `OpenTelemetry ${
-    Deno.env.get("OTEL_DENO") === "true" ? "enabled" : "disabled"
-  }`,
+  `OpenTelemetry ${appEnv.otel.denoEnabled ? "enabled" : "disabled"}`,
 );
 
 if (config) {
   console.log(
-    `Loaded ${config.secrets.length} expected secrets from ${CONFIG_JSON_PATH}`,
+    `Loaded ${config.secrets.length} expected secrets from ${appEnv.configJsonPath}`,
   );
 }
 
-const api: SecretsApi = Deno.env.get("MOCK_SECRETS_API")
+const api: SecretsApi = appEnv.mockSecretsApi
   ? createMockApi()
   : createActualApi();
 
@@ -402,5 +401,5 @@ app.post("/configs/delete", async (c) => {
   }
 });
 
-console.log(`Swarm Secrets UI listening on :${PORT}`);
-Deno.serve({ port: PORT }, app.fetch);
+console.log(`Swarm Secrets UI listening on :${appEnv.port}`);
+Deno.serve({ port: appEnv.port }, app.fetch);
