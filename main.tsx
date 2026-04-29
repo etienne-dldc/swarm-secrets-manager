@@ -1,5 +1,7 @@
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { type Context, Hono, type HonoRequest } from "hono";
 import { serveStatic } from "hono/deno";
+import { routePath } from "hono/route";
 import denoJson from "./deno.json" with { type: "json" };
 import {
   createActualApi,
@@ -22,6 +24,11 @@ const PORT = Number(Deno.env.get("PORT") ?? "3000");
 const config = await loadConfigFromPath(CONFIG_JSON_PATH);
 
 console.log(`Starting Swarm Secrets Manager v${denoJson.version}`);
+console.log(
+  `OpenTelemetry ${
+    Deno.env.get("OTEL_DENO") === "true" ? "enabled" : "disabled"
+  }`,
+);
 
 if (config) {
   console.log(
@@ -45,6 +52,29 @@ function getFlash(c: Context) {
 }
 
 const app = new Hono();
+
+app.use("*", async (c, next) => {
+  try {
+    await next();
+  } catch (error) {
+    throw error;
+  } finally {
+    const activeSpan = trace.getActiveSpan();
+    if (activeSpan) {
+      const route = routePath(c);
+      activeSpan.setAttribute("http.route", route);
+      activeSpan.updateName(`${c.req.method} ${route}`);
+
+      if (c.error) {
+        activeSpan.recordException(c.error);
+        activeSpan.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: c.error.message,
+        });
+      }
+    }
+  }
+});
 
 app.use(
   "/public/*",

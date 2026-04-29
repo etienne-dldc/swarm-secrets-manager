@@ -1,3 +1,5 @@
+import { SpanStatusCode } from "@opentelemetry/api";
+import { recordSpanError, telemetryTracer } from "../../telemetry.ts";
 import type {
   ConfigSpec,
   DockerApi,
@@ -80,70 +82,101 @@ async function dockerApi(
   path: string,
   jsonBody?: string,
 ): Promise<DockerApiResponse> {
-  const args = [
-    "--silent",
-    "--show-error",
-    "--unix-socket",
-    DOCKER_SOCKET,
-    "-X",
-    method,
-    `http://localhost/${DOCKER_API_VERSION}${path}`,
-    "-w",
-    "\\n%{http_code}",
-  ];
+  return await telemetryTracer.startActiveSpan(
+    `docker.api ${method} ${path}`,
+    async (span) => {
+      span.setAttributes({
+        "docker.api.version": DOCKER_API_VERSION,
+        "docker.socket.path": DOCKER_SOCKET,
+        "http.request.method": method,
+        "url.path": path,
+      });
 
-  if (jsonBody !== undefined) {
-    args.push(
-      "-H",
-      "Content-Type: application/json",
-      "--data-binary",
-      jsonBody,
-    );
-  }
+      try {
+        const args = [
+          "--silent",
+          "--show-error",
+          "--unix-socket",
+          DOCKER_SOCKET,
+          "-X",
+          method,
+          `http://localhost/${DOCKER_API_VERSION}${path}`,
+          "-w",
+          "\\n%{http_code}",
+        ];
 
-  console.log(`[docker] ${method} ${path}`);
+        if (jsonBody !== undefined) {
+          args.push(
+            "-H",
+            "Content-Type: application/json",
+            "--data-binary",
+            jsonBody,
+          );
+          span.setAttribute("http.request.body.size", jsonBody.length);
+        }
 
-  const output = await new Deno.Command("curl", {
-    args,
-    stdout: "piped",
-    stderr: "piped",
-  }).output();
+        console.log(`[docker] ${method} ${path}`);
 
-  if (output.code !== 0) {
-    const stderr = new TextDecoder().decode(output.stderr).trim();
-    console.error(`[docker] curl exited with code ${output.code}`);
-    console.error(`[docker] stderr: ${stderr}`);
-    throw new Error(
-      `curl command failed (exit ${output.code}): ${stderr || "(no stderr)"}`,
-    );
-  }
+        const output = await new Deno.Command("curl", {
+          args,
+          stdout: "piped",
+          stderr: "piped",
+        }).output();
 
-  const text = new TextDecoder().decode(output.stdout);
-  // curl appends "\n<status_code>" via -w "\n%{http_code}"; curl interprets \n
-  // as an actual newline character, so we search for "\n" (not "\\n").
-  const separatorIndex = text.lastIndexOf("\n");
-  if (separatorIndex < 0) {
-    console.error(`[docker] raw response (${text.length} bytes): ${text}`);
-    throw new Error(
-      `Unexpected Docker API response for ${method} ${path}: no status-code separator found`,
-    );
-  }
+        if (output.code !== 0) {
+          const stderr = new TextDecoder().decode(output.stderr).trim();
+          console.error(`[docker] curl exited with code ${output.code}`);
+          console.error(`[docker] stderr: ${stderr}`);
+          throw new Error(
+            `curl command failed (exit ${output.code}): ${
+              stderr || "(no stderr)"
+            }`,
+          );
+        }
 
-  const body = text.slice(0, separatorIndex);
-  const statusRaw = text.slice(separatorIndex + 1).trim();
-  const status = Number(statusRaw);
-  if (Number.isNaN(status)) {
-    console.error(`[docker] raw status string: ${JSON.stringify(statusRaw)}`);
-    console.error(`[docker] raw body: ${body}`);
-    throw new Error(
-      `Unable to parse Docker API status code for ${method} ${path}: got ${
-        JSON.stringify(statusRaw)
-      }`,
-    );
-  }
+        const text = new TextDecoder().decode(output.stdout);
+        // curl appends "\n<status_code>" via -w "\n%{http_code}"; curl interprets \n
+        // as an actual newline character, so we search for "\n" (not "\\n").
+        const separatorIndex = text.lastIndexOf("\n");
+        if (separatorIndex < 0) {
+          console.error(
+            `[docker] raw response (${text.length} bytes): ${text}`,
+          );
+          throw new Error(
+            `Unexpected Docker API response for ${method} ${path}: no status-code separator found`,
+          );
+        }
 
-  console.log(`[docker] ${method} ${path} → ${status}`);
-  return { status, body };
+        const body = text.slice(0, separatorIndex);
+        const statusRaw = text.slice(separatorIndex + 1).trim();
+        const status = Number(statusRaw);
+        if (Number.isNaN(status)) {
+          console.error(
+            `[docker] raw status string: ${JSON.stringify(statusRaw)}`,
+          );
+          console.error(`[docker] raw body: ${body}`);
+          throw new Error(
+            `Unable to parse Docker API status code for ${method} ${path}: got ${
+              JSON.stringify(statusRaw)
+            }`,
+          );
+        }
+
+        span.setAttribute("http.response.status_code", status);
+        span.setStatus({
+          code: status >= 400 ? SpanStatusCode.ERROR : SpanStatusCode.OK,
+        });
+
+        console.log(`[docker] ${method} ${path} → ${status}`);
+        return { status, body };
+      } catch (error) {
+        recordSpanError(span, error);
+        throw error;
+      } finally {
+        span.end();
+      }
+    },
+  );
 }
 
 function getCollectionPath(kind: ResourceKind): string {
