@@ -38,7 +38,9 @@ function parsePort(raw: string | undefined): number {
   const parsed = Number(raw);
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
     console.error(
-      `[env] Invalid PORT=${JSON.stringify(raw)}, using default ${DEFAULT_PORT}`,
+      `[env] Invalid PORT=${
+        JSON.stringify(raw)
+      }, using default ${DEFAULT_PORT}`,
     );
     return DEFAULT_PORT;
   }
@@ -68,12 +70,19 @@ export function readEnv(): AppEnv {
       Deno.env.get("DOCKER_API_VERSION"),
       DEFAULT_DOCKER_API_VERSION,
     ),
-    dockerSocket: nonEmpty(Deno.env.get("DOCKER_SOCKET"), DEFAULT_DOCKER_SOCKET),
+    dockerSocket: nonEmpty(
+      Deno.env.get("DOCKER_SOCKET"),
+      DEFAULT_DOCKER_SOCKET,
+    ),
     otel: {
       denoEnabled: parseFlag(Deno.env.get("OTEL_DENO")),
       denoConsole: nullable(Deno.env.get("OTEL_DENO_CONSOLE")),
-      exporterOtlpEndpoint: nullable(Deno.env.get("OTEL_EXPORTER_OTLP_ENDPOINT")),
-      exporterOtlpProtocol: nullable(Deno.env.get("OTEL_EXPORTER_OTLP_PROTOCOL")),
+      exporterOtlpEndpoint: nullable(
+        Deno.env.get("OTEL_EXPORTER_OTLP_ENDPOINT"),
+      ),
+      exporterOtlpProtocol: nullable(
+        Deno.env.get("OTEL_EXPORTER_OTLP_PROTOCOL"),
+      ),
       exporterOtlpHeaders: nullable(Deno.env.get("OTEL_EXPORTER_OTLP_HEADERS")),
       serviceName: nullable(Deno.env.get("OTEL_SERVICE_NAME")),
       resourceAttributes: nullable(Deno.env.get("OTEL_RESOURCE_ATTRIBUTES")),

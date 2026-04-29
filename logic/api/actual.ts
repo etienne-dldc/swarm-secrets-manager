@@ -1,6 +1,6 @@
 import { SpanStatusCode } from "@opentelemetry/api";
-import { appEnv } from "../env.ts";
 import { recordSpanError, telemetryTracer } from "../../telemetry.ts";
+import { appEnv } from "../env.ts";
 import type {
   ConfigSpec,
   DockerApi,
