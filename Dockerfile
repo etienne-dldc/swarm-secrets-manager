@@ -17,4 +17,4 @@ ENV OTEL_DENO=true
 ENV OTEL_SERVICE_NAME=swarm-secrets-manager
 EXPOSE 3000
 
-CMD ["run", "--log-level=debug", "--allow-net", "--allow-env", "--allow-read=/app", "--allow-run=curl", "--no-prompt", "main.tsx"]
+CMD ["run", "--allow-net", "--allow-env", "--allow-read=/app", "--allow-run=curl", "--no-prompt", "main.tsx"]
