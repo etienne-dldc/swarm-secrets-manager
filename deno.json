@@ -1,7 +1,7 @@
 {
   "name": "swarm-secrets-manager",
   "exports": "./main.tsx",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "tasks": {
     "bump": "deno run -A jsr:@mys/bump@1",
     "deps:outdated": "deno outdated",
