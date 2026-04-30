@@ -29,7 +29,6 @@ export interface DockerApi {
   listSecrets: () => Promise<SecretView[]>;
   getSecret: (id: string) => Promise<SecretView>;
   createSecret: (name: string, value: string) => Promise<void>;
-  updateSecret: (id: string, name: string, value: string) => Promise<void>;
   deleteSecret: (id: string) => Promise<void>;
   validateSecretName: (name: string) => string | null;
   formatSecretDeleteLabel: (id: string, name?: string) => string;

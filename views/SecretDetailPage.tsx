@@ -29,8 +29,6 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
   ok,
   error,
 }) => {
-  const versionIndex = secret.docker.Version?.Index;
-
   const contentClass = css`
     ${utility.flex({ direction: "column", gap: 4, padding: 3 })};
   `;
@@ -112,7 +110,6 @@ export const SecretDetailPage: FC<SecretDetailPageProps> = ({
         </Stack>
         {description ? <p class={descriptionClass}>{description}</p> : null}
         <p class={createdTextClass}>Created {secret.createdAt}</p>
-        <p class={createdTextClass}>Version {versionIndex ?? "-"}</p>
         <FormField label="Id" id="id">
           <Input
             id="id"

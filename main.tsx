@@ -272,14 +272,12 @@ app.post("/secrets/create", async (c) => {
         item.name === rotateOriginalName
       );
       if (existingSecret) {
-        await api.updateSecret(existingSecret.id, name, value);
+        await api.deleteSecret(existingSecret.id);
         rotated = true;
-      } else {
-        await api.createSecret(name, value);
       }
-    } else {
-      await api.createSecret(name, value);
     }
+
+    await api.createSecret(name, value);
 
     console.log(JSON.stringify({
       action: "create_secret",
