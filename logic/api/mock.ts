@@ -69,6 +69,8 @@ export function createMockApi(): DockerApi {
     listSecrets: () => Promise.resolve(toSecretViews(mockSecrets)),
     getSecret: (id) => getResource(mockSecrets, id, "secret"),
     createSecret: (name, value) => createResource(mockSecrets, name, value),
+    updateSecret: (id, name, value) =>
+      updateResource(mockSecrets, id, name, value, "secret"),
     deleteSecret: (id) => deleteResource(mockSecrets, id, "secret"),
     validateSecretName: validateResourceName,
     formatSecretDeleteLabel: formatDeleteLabel,
@@ -200,6 +202,29 @@ function deleteResource(
   if (!resources.delete(id)) {
     throw new Error(`${kind} ${id} not found`);
   }
+  return Promise.resolve();
+}
+
+function updateResource(
+  resources: Map<string, MockResource>,
+  id: string,
+  name: string,
+  value: string,
+  kind: "secret" | "config",
+): Promise<void> {
+  const validation = validateResourceName(name);
+  if (validation) {
+    throw new Error(validation);
+  }
+
+  const existing = resources.get(id);
+  if (!existing) {
+    throw new Error(`${kind} ${id} not found`);
+  }
+
+  existing.name = name;
+  existing.value = value;
+  resources.set(id, existing);
   return Promise.resolve();
 }
 

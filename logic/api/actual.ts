@@ -27,6 +27,7 @@ export function createActualApi(): DockerApi {
     listSecrets: () => listResources<DockerSecret>("secret"),
     getSecret: (id) => getResource<DockerSecret>("secret", id),
     createSecret: (name, value) => createResource("secret", name, value),
+    updateSecret: (id, name, value) => updateSecret(id, name, value),
     deleteSecret: (id) => deleteResource("secret", id),
     validateSecretName: validateResourceName,
     formatSecretDeleteLabel: formatDeleteLabel,
@@ -289,6 +290,50 @@ async function createResource(
     );
     throw new Error(
       `Docker returned ${response.status} creating ${kind} "${name}": ${
+        extractDockerMessage(response.body)
+      }`,
+    );
+  }
+}
+
+async function updateSecret(
+  id: string,
+  name: string,
+  value: string,
+): Promise<void> {
+  const validation = validateResourceName(name);
+  if (validation) {
+    throw new Error(validation);
+  }
+
+  const existingSecret = await getResource<DockerSecret>("secret", id);
+  const version = existingSecret.docker.Version?.Index;
+  if (version === undefined) {
+    throw new Error(`Missing version index for secret ${id}.`);
+  }
+
+  const payloadBody: SecretSpec = {
+    Name: name,
+    Labels: existingSecret.docker.Spec?.Labels,
+    Driver: existingSecret.docker.Spec?.Driver,
+    Templating: existingSecret.docker.Spec?.Templating,
+    Data: encodeBase64Utf8(value),
+  };
+
+  const response = await dockerApi(
+    "POST",
+    `/secrets/${encodeURIComponent(id)}/update?version=${
+      encodeURIComponent(String(version))
+    }`,
+    JSON.stringify(payloadBody),
+  );
+
+  if (response.status !== 200) {
+    console.error(
+      `[docker] update secret ${id} failed: status=${response.status} body=${response.body}`,
+    );
+    throw new Error(
+      `Docker returned ${response.status} updating secret ${id}: ${
         extractDockerMessage(response.body)
       }`,
     );
